@@ -1,0 +1,434 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tür-Konfigurator – Live-Vorschau (kompakt)</title>
+<style>
+  :root{
+    --bg:#f3f4f6;--card:#fff;--text:#0f172a;--muted:#6b7280;--border:#e5e7eb;
+    --brand:#111;--brand-2:#1f2937;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font:14px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;color:var(--text);background:var(--bg)}
+  .wrap{max-width:1320px;margin:auto;padding:16px;display:grid;grid-template-columns:1fr;gap:16px}
+  @media (min-width:1200px){.wrap{grid-template-columns:minmax(560px,1fr) 560px}}
+  .card{background:var(--card);border:1px solid var(--border);border-radius:16px;box-shadow:0 10px 30px rgba(0,0,0,.04)}
+  .pad{padding:16px}
+  .sticky{position:sticky;top:12px;max-height:calc(100vh - 24px);display:flex;flex-direction:column}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .muted{color:var(--muted)}
+  .btn{border:1px solid var(--border);background:#fff;border-radius:999px;padding:.5rem .9rem;cursor:pointer}
+  .btn:is(:hover,:focus){background:#f3f4f6}
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:999px;overflow:hidden}
+  .seg button{padding:.45rem .9rem;border:0;background:#fff}
+  .seg button.active{background:var(--brand);color:#fff}
+  .divider{display:flex;align-items:center;gap:12px;margin:16px 0}
+  .divider::before,.divider::after{content:"";height:1px;background:var(--border);flex:1}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .grid-5{display:grid;grid-template-columns:repeat(5,1fr);gap:10px}
+  .opt{border:1px solid var(--border);border-radius:14px;padding:8px;text-align:center;cursor:pointer;background:#fff}
+  .opt.active{outline:2px solid #111;border-color:#111}
+  .swatch{position:relative;height:46px;border-radius:10px;border:1px solid var(--border);overflow:hidden}
+  .swatch span{position:absolute;left:6px;bottom:4px;font-size:10px;background:#fff;padding:1px 4px;border-radius:6px}
+  label small{color:var(--muted)}
+  .field{display:grid;gap:6px}
+  input,select{width:100%;border:1px solid var(--border);border-radius:10px;background:#fff;padding:.6rem .7rem}
+  /* Live Scene box */
+  .scene{flex:1;border:1px solid var(--border);border-radius:14px;background:#f8fafc;display:grid;place-items:center;overflow:hidden;min-height:420px}
+  .summary{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px}
+  .sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- LEFT: Live Preview -->
+  <div class="card pad sticky">
+    <div class="row">
+      <div>
+        <div style="font-weight:700;font-size:18px">Live-Ansicht</div>
+        <div class="muted" id="modeLabel">Tageslicht-Szene</div>
+      </div>
+      <div class="row" style="gap:6px">
+        <button class="btn" id="toggleTheme">Abendmodus</button>
+        <div class="seg" id="viewSeg">
+          <button data-v="Außen" class="active">Außen</button>
+          <button data-v="Innen">Innen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="scene" id="sceneBox">
+      <!-- SVG wird per JS generiert -->
+    </div>
+
+    <div class="summary">
+      <div class="row">
+        <div>
+          <div class="muted">Ansicht</div>
+          <div id="sumView" style="font-weight:700">Außen</div>
+        </div>
+        <div class="seg" id="viewSeg2">
+          <button data-v="Außen" class="active">Außen</button>
+          <button data-v="Innen">Innen</button>
+        </div>
+      </div>
+      <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Aktuelle Auswahl</span></div>
+      <div class="sumgrid" id="summaryGrid"><!-- gefüllt per JS --></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Configurator -->
+  <div class="card pad" id="config">
+
+    <h1 style="margin:2px 0 0;font-size:22px">Tür-Konfigurator</h1>
+    <div class="muted" style="margin-bottom:8px">Basis – kompakte Demo (fokus Live-Vorschau)</div>
+
+    <!-- Presets -->
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Schnellstart</span></div>
+    <div class="grid-4">
+      <button class="opt" data-preset="modernAnth">Modern Anthrazit</button>
+      <button class="opt" data-preset="klassikWhite">Klassik Weiß + Oberlicht</button>
+      <button class="opt" data-preset="woodTop">Warm Holz + Oberlicht</button>
+      <button class="opt" data-preset="elegantDb">Elegant DB703</button>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Hersteller & Serie</span></div>
+    <div class="grid-2">
+      <label class="field">Hersteller
+        <select id="manufacturer">
+          <option>Hersteller A</option><option>Hersteller B</option>
+        </select>
+      </label>
+      <label class="field">Serie
+        <select id="series">
+          <option>PREMIUM</option><option>EXCLUSIV</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Rahmenform</span></div>
+    <div class="grid-3" id="frameForm">
+      <div class="opt active" data-v="Elegant">Elegant</div>
+      <div class="opt" data-v="Modern">Modern</div>
+      <div class="opt" data-v="Klassik">Klassik</div>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Öffnungsrichtung (DIN)</span></div>
+    <div class="grid-2" id="opening">
+      <div class="opt active" data-v="DIN links nach innen öffnend">DIN links nach innen öffnend</div>
+      <div class="opt" data-v="DIN rechts nach innen öffnend">DIN rechts nach innen öffnend</div>
+      <div class="opt" data-v="DIN links nach außen öffnend">DIN links nach außen öffnend</div>
+      <div class="opt" data-v="DIN rechts nach außen öffnend">DIN rechts nach außen öffnend</div>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Türform</span></div>
+    <div class="grid-2" id="doorForm">
+      <div class="opt active" data-v="Ohne Seitenteile ohne Oberlicht">Ohne Seitenteile ohne Oberlicht</div>
+      <div class="opt" data-v="Seitenteil links ohne Oberlicht">Seitenteil links ohne Oberlicht</div>
+      <div class="opt" data-v="Seitenteil rechts ohne Oberlicht">Seitenteil rechts ohne Oberlicht</div>
+      <div class="opt" data-v="Seitenteil links & rechts ohne Oberlicht">Seitenteil links & rechts ohne Oberlicht</div>
+      <div class="opt" data-v="Ohne Seitenteil mit Oberlicht">Ohne Seitenteil mit Oberlicht</div>
+      <div class="opt" data-v="Seitenteil links mit Oberlicht">Seitenteil links mit Oberlicht</div>
+      <div class="opt" data-v="Seitenteil rechts mit Oberlicht">Seitenteil rechts mit Oberlicht</div>
+      <div class="opt" data-v="Seitenteil links & rechts mit Oberlicht">Seitenteil links & rechts mit Oberlicht</div>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Modell</span></div>
+    <div class="grid-5" id="model">
+      <div class="opt active" data-v="Istanbul">Istanbul</div>
+      <div class="opt" data-v="Ankara">Ankara</div>
+      <div class="opt" data-v="Izmir">Izmir</div>
+      <div class="opt" data-v="Bursa">Bursa</div>
+      <div class="opt" data-v="Antalya">Antalya</div>
+      <div class="opt" data-v="Konya">Konya</div>
+      <div class="opt" data-v="Adana">Adana</div>
+      <div class="opt" data-v="Gaziantep">Gaziantep</div>
+      <div class="opt" data-v="Kayseri">Kayseri</div>
+      <div class="opt" data-v="Trabzon">Trabzon</div>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Farben & Ansicht</span></div>
+    <div class="grid-2">
+      <label class="field">Außenfarbe
+        <select id="colOut">
+          <option value="#383E42">Anthrazitgrau (RAL 7016)</option>
+          <option value="#F2F2F2">Verkehrsweiß (RAL 9016)</option>
+          <option value="#1F2326">Schwarzgrau (RAL 7021)</option>
+          <option value="#6E6B63">DB703 (metallic)</option>
+          <option value="#6B3E2E">Nussbaum (Holzdekor)</option>
+        </select>
+      </label>
+      <label class="field">Innenfarbe
+        <select id="colIn" disabled>
+          <option value="same">gleich Außen</option>
+          <option value="#F2F2F2">Weiß (RAL 9016)</option>
+          <option value="#383E42">Anthrazit (RAL 7016)</option>
+          <option value="#1F2326">Schwarzgrau</option>
+          <option value="#8D8F8E">Aluminiumgrau</option>
+        </select>
+        <small>„gleich Außen“ → wird automatisch übernommen</small>
+      </label>
+    </div>
+    <div class="grid-2">
+      <label class="field">Innenfarbe anders?
+        <select id="inDifferent">
+          <option value="no">Nein (gleich Außen)</option>
+          <option value="yes">Ja (eigene Innenfarbe)</option>
+        </select>
+      </label>
+      <label class="field">Ansicht
+        <select id="viewSelect">
+          <option>Außen</option>
+          <option>Innen</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="divider"><span class="muted" style="letter-spacing:.14em;text-transform:uppercase;font-size:11px">Größe (Gesamtmaß)</span></div>
+    <div class="grid-2">
+      <label class="field">Gesamtbreite (mm)<input id="width" type="number" min="900" step="10" value="1180"></label>
+      <label class="field">Gesamthöhe (mm)<input id="height" type="number" min="2000" step="10" value="2180"></label>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const state = {
+  manufacturer: 'Hersteller A',
+  series: 'PREMIUM',
+  frameForm: 'Elegant',
+  openDirection: 'DIN links nach innen öffnend',
+  doorForm: 'Ohne Seitenteile ohne Oberlicht',
+  model: 'Istanbul',
+  outHex: '#383E42',
+  inSame: true,
+  inHex: '#F2F2F2',
+  width: 1180, height: 2180,
+  view: 'Außen',
+  theme: 'Tag'
+};
+
+const $ = (s, p=document)=>p.querySelector(s);
+const $$ = (s, p=document)=>Array.from(p.querySelectorAll(s));
+
+function parseDoorForm(s){
+  const both = /links & rechts/.test(s);
+  return {
+    left: both || /links/.test(s),
+    right: both || /rechts/.test(s),
+    transom: /Oberlicht/.test(s)
+  };
+}
+
+function render(){
+  const scene = $('#sceneBox');
+  const {left,right,transom} = parseDoorForm(state.doorForm);
+  const FRAME=48, GAP=5, SIDE=330, TRANS=360;
+  const sideL = left?SIDE:0, sideR = right?SIDE:0, transH = transom?TRANS:0;
+  const leafW = Math.max(700, state.width - sideL - sideR);
+  const leafH = Math.max(1800, state.height - transH);
+  const totalW = sideL+leafW+sideR, totalH=leafH+transH;
+  const sc=0.86, fT=FRAME*sc, gap=GAP*sc, sideL2=sideL*sc, sideR2=sideR*sc, trans2=transH*sc, leafW2=leafW*sc, leafH2=leafH*sc, tW=totalW*sc, tH=totalH*sc;
+  const offX=220, offY=140, viewW=tW+fT*3+560, viewH=tH+fT*3+260;
+  const night = state.theme==='Abend';
+  const hingeLeft = /links/.test(state.openDirection);
+  const frameRx = state.frameForm==='Elegant'?18:state.frameForm==='Modern'?0:8;
+  const doorColor = state.view==='Außen' ? state.outHex : (state.inSame? state.outHex : state.inHex);
+
+  const wallGrad = night?`url(#wallNight)`:`url(#wallDay)`;
+  const lampFill = night? '#ffdf7a':'#ffd54f';
+  const glassTop = night? '#dfe8f1':'#e9f4fb';
+  const glassMid = night? '#9fb6c7':'#bdd2de';
+  const glassBot = night? '#7b97a8':'#a2bbc8';
+
+  scene.innerHTML = `
+  <svg viewBox="0 0 ${viewW} ${viewH}" style="width:100%;height:100%">
+    <defs>
+      <linearGradient id="wallDay" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#f7f8f9"/><stop offset="100%" stop-color="#e9edf0"/></linearGradient>
+      <linearGradient id="wallNight" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1f2937"/><stop offset="100%" stop-color="#111827"/></linearGradient>
+      <linearGradient id="pave" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${night?'#5d646d':'#c9ced3'}"/><stop offset="100%" stop-color="${night?'#4a5159':'#aaafb6'}"/></linearGradient>
+      <pattern id="tiles" width="42" height="26" patternUnits="userSpaceOnUse"><rect width="42" height="26" fill="url(#pave)"/><path d="M0 0 H42 M0 13 H42 M21 0 V26" stroke="${night?'#222831':'#80858b'}" opacity=".35"/></pattern>
+      <linearGradient id="metal" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#8a8d92"/><stop offset="50%" stop-color="#cdd1d6"/><stop offset="100%" stop-color="#6b6e73"/></linearGradient>
+      <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${glassTop}"/><stop offset="60%" stop-color="${glassMid}"/><stop offset="100%" stop-color="${glassBot}"/></linearGradient>
+      <linearGradient id="terra" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#cc7a49"/><stop offset="100%" stop-color="#70442a"/></linearGradient>
+      <linearGradient id="mat" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="${night?'#111':'#404040'}"/><stop offset="100%" stop-color="${night?'#000':'#222'}"/></linearGradient>
+      <filter id="ds"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="${night?0.45:0.25}"/></filter>
+    </defs>
+
+    <rect x="0" y="0" width="${viewW}" height="${viewH}" fill="${wallGrad}"/>
+    <rect x="0" y="${offY + tH + fT*1.6}" width="${viewW}" height="140" fill="url(#tiles)"/>
+    <g filter="url(#ds)">
+      <rect x="${offX-50}" y="${offY + tH + fT*1.1}" width="${tW + fT*2 + 100}" height="18" rx="4" fill="${night?'#707880':'#b9bec4'}"/>
+      <rect x="${offX-60}" y="${offY + tH + fT*1.1 + 18}" width="${tW + fT*2 + 120}" height="12" rx="3" fill="${night?'#5b626a':'#9fa5ab'}"/>
+    </g>
+
+    <!-- Hausnummer + Lampe + Briefkasten + Matte -->
+    <g>
+      <rect x="${offX-90}" y="${offY+10}" width="38" height="38" rx="6" fill="${night?'#0b0f14':'#111'}"/>
+      <text x="${offX-71}" y="${offY+36}" text-anchor="middle" font-size="20" fill="${night?'#cbd5e1':'#fff'}" font-family="ui-sans-serif">27</text>
+      <g filter="url(#ds)" transform="translate(${offX + tW + fT + 30}, ${offY + 40})">
+        <rect x="-8" y="-8" width="16" height="32" rx="4" fill="${night?'#0b0f14':'#111'}"/>
+        <rect x="-22" y="22" width="44" height="10" rx="5" fill="${lampFill}"/>
+      </g>
+      <g filter="url(#ds)" transform="translate(${offX - 110}, ${offY + 160})">
+        <rect x="0" y="0" width="70" height="50" rx="8" fill="${night?'#5f6b75':'#7b8790'}"/>
+        <rect x="8" y="12" width="54" height="8" rx="4" fill="${night?'#c7d0d6':'#cbd5db'}"/>
+        <rect x="8" y="30" width="40" height="6" rx="3" fill="${night?'#44515c':'#5b6b75'}"/>
+      </g>
+      <rect x="${offX + fT + 20}" y="${offY + tH + fT*1.05 + 4}" width="${leafW2*0.6}" height="18" rx="4" fill="url(#mat)"/>
+    </g>
+
+    <!-- Pflanze -->
+    <g transform="translate(${offX + tW + fT*2 + 110}, ${offY + tH + fT*1.05})">
+      <ellipse cx="0" cy="6" rx="44" ry="12" fill="#000" opacity="${night?0.35:0.25}"/>
+      <g filter="url(#ds)">
+        <ellipse cx="0" cy="-128" rx="52" ry="18" fill="#5a3a28" opacity="${night?0.45:0.35}"/>
+        <rect x="-50" y="-144" width="100" height="100" rx="16" fill="url(#terra)"/>
+        <ellipse cx="0" cy="-144" rx="48" ry="12" fill="#e1b08a"/>
+        <ellipse cx="0" cy="-144" rx="44" ry="10" fill="#4a3b2f"/>
+      </g>
+      ${Array.from({length:14}).map((_,i)=>{const a=-Math.PI/2+(i-6)*0.18, len=160+Math.sin(i)*26, x2=Math.cos(a)*len, y2=Math.sin(a)*len; return `<path d="M0 -140 Q ${x2*.25} ${-140+y2*.25} ${x2} ${-140+y2}" stroke="${night?'#2a5f3e':'#2f6e44'}" stroke-width="5" fill="none" stroke-linecap="round"/>`;}).join('')}
+      ${Array.from({length:34}).map((_,i)=>{const ang=i/34*6.2831, x=Math.cos(ang)*70, y=-170+Math.sin(ang)*52; const c = (i%2? (night?'#3a9a6f':'#46b07a') : (night?'#267b55':'#2e8a57')); return `<ellipse cx="${x}" cy="${y}" rx="14" ry="24" fill="${c}" opacity=".98"/>`;}).join('')}
+    </g>
+
+    <!-- Rahmen & Füllungen -->
+    <g filter="url(#ds)">
+      <rect x="${offX+fT/2}" y="${offY+fT/2}" width="${tW+fT}" height="${tH+fT}" rx="${frameRx}" fill="${night?'#e5e7eb':'#f8f8f8'}" stroke="${night?'#9aa3ad':'#c8c8c8'}" stroke-width="${fT}" />
+      ${trans2>0? `
+        <g><rect x="${offX+fT}" y="${offY+fT}" width="${tW}" height="${trans2}" fill="url(#metal)"/>
+        <rect x="${offX+fT+10}" y="${offY+fT+10}" width="${tW-20}" height="${trans2-20}" rx="6" fill="url(#glass)"/></g>`:''}
+      ${sideL2>0? `<g><rect x="${offX+fT}" y="${offY+fT+trans2}" width="${sideL2}" height="${leafH2}" fill="url(#metal)"/>
+        <rect x="${offX+fT+10}" y="${offY+fT+trans2+10}" width="${sideL2-20}" height="${leafH2-20}" rx="6" fill="url(#glass)"/></g>`:''}
+      ${sideR2>0? `<g><rect x="${offX+fT+sideL2+leafW2}" y="${offY+fT+trans2}" width="${sideR2}" height="${leafH2}" fill="url(#metal)"/>
+        <rect x="${offX+fT+sideL2+leafW2+10}" y="${offY+fT+trans2+10}" width="${sideR2-20}" height="${leafH2-20}" rx="6" fill="url(#glass)"/></g>`:''}
+      <rect x="${offX+fT+sideL2+gap}" y="${offY+fT+trans2+gap}" width="${leafW2-gap*2}" height="${leafH2-gap*2}" rx="${Math.max(2,frameRx-8)}" fill="${doorColor}"/>
+      ${renderModel(state.model, offX+fT+sideL2+gap, offY+fT+trans2+gap, leafW2-gap*2, leafH2-gap*2)}
+      ${[0.18,0.5,0.82].map(p=>{const hw=18*sc,hh=8*sc,y=offY+fT+trans2+gap+(leafH2-gap*2)*p-hh/2,x=hingeLeft?offX+fT+sideL2+gap-hw:offX+fT+sideL2+gap+(leafW2-gap*2);return `<rect x="${x}" y="${y}" width="${hw}" height="${hh}" rx="2" fill="url(#metal)"/>`;}).join('')}
+      ${(()=>{const barLen=Math.min(130,(leafH2-gap*2)*0.22),thk=8,cy=offY+fT+trans2+gap+(leafH2-gap*2)*0.55,isRight=!hingeLeft,x=isRight?offX+fT+sideL2+gap+(leafW2-gap*2)-24:offX+fT+sideL2+gap+24;return `<rect x="${x-thk/2}" y="${cy-barLen/2}" width="${thk}" height="${barLen}" rx="${thk/2}" fill="url(#metal)"/><circle cx="${x}" cy="${cy}" r="10" fill="${night?'#0f172a':'#1a1a1a'}"/>`;})()}
+    </g>
+
+    <!-- Öffnungsrichtung (Planansicht klein) -->
+    <g transform="translate(${offX + tW + fT + 140}, ${offY + 12}) scale(.9)">
+      ${renderDIN(state.openDirection)}
+    </g>
+  </svg>`;
+
+  // Summary UI
+  $('#sumView').textContent = state.view;
+  const sum = $('#summaryGrid'); sum.innerHTML = '';
+  const rows = [
+    ['Hersteller', state.manufacturer],
+    ['Serie', state.series],
+    ['Rahmenform', state.frameForm],
+    ['Öffnungsrichtung', state.openDirection],
+    ['Türform', state.doorForm],
+    ['Modell', state.model],
+  ];
+  rows.forEach(([l,v])=>{
+    const d=document.createElement('div'); d.innerHTML=`<div class="muted" style="font-size:12px">${l}</div><div style="font-weight:600">${v}</div>`;
+    sum.appendChild(d);
+  });
+  $('#modeLabel').textContent = state.theme==='Tag'?'Tageslicht-Szene':'Abendmodus mit Beleuchtung';
+}
+function renderDIN(k){
+  const isL = /links/.test(k), isIn = /innen/.test(k);
+  const pivotX = isL ? 30 : 70;
+  const arc = isIn ? `A 40 40 0 0 ${isL?1:0}` : `A 40 40 0 0 ${isL?0:1}`;
+  const arcPath = `M ${pivotX} 30 ${arc} ${isL?70:30} 70`;
+  return `
+  <svg viewBox="0 0 100 100" width="120" height="90">
+    <rect x="6" y="6" width="88" height="88" fill="#fafafa" stroke="#475569" stroke-width="2"/>
+    <line x1="${pivotX}" y1="30" x2="${pivotX}" y2="70" stroke="#111" stroke-width="3"/>
+    <path d="${arcPath}" stroke="#111" stroke-dasharray="4" stroke-width="2" fill="none"/>
+    ${[0.2,0.5,0.8].map(t=>`<circle cx="${pivotX}" cy="${30+(70-30)*t}" r="2.3" fill="#111"/>`).join('')}
+  </svg>`;
+}
+function renderModel(name,x,y,w,h){
+  const g = (xx,yy,ww,hh,r=6)=>`<g><rect x="${xx}" y="${yy}" width="${ww}" height="${hh}" rx="${r}" fill="#e8f2f6" stroke="#9fb8c4"/><rect x="${xx}" y="${yy}" width="${ww}" height="${hh}" rx="${r}" fill="#a8c5d1" opacity=".55"/></g>`;
+  const d = (xx,yy,ww,hh,r=4)=>`<rect x="${xx}" y="${yy}" width="${ww}" height="${hh}" rx="${r}" fill="#11111115" stroke="#00000020"/>`;
+  const pad = Math.min(w,h)*.06;
+  switch(name){
+    case 'Istanbul':{const gw=Math.min(80,w*.12), gap=gw*.6, total=gw*3+gap*2, start=x+(w-total)/2, gy=y+pad, gh=h-pad*2; return [0,1,2].map(i=>g(start+i*(gw+gap),gy,gw,gh)).join('');}
+    case 'Ankara':{const gw=Math.min(70,w*.1), gx=x+w*.68; return g(gx,y+pad,gw,h-2*pad);}
+    case 'Izmir':{const s=Math.min(100,w*.18), gap=s*.35, total=s*3+gap*2, x0=x+(w-total)/2, y0=y+h*.22; return [0,1,2].map(i=>g(x0+i*(s+gap),y0,s,s)).concat([0,1].map(i=>g(x0+(s+gap)/2+i*(s+gap),y0+s+gap,s,s))).join('');}
+    case 'Bursa':{const ww=w*.7,hh=h*.42,xx=x+(w-ww)/2,yy=y+pad; return g(xx,yy+hh*.25,ww,hh*.75,16)+`<path d="M ${xx} ${yy+hh*.25} A ${ww/2} ${hh/2} 0 0 1 ${xx+ww} ${yy+hh*.25}" stroke="#00000020" fill="none" stroke-width="8"/>`;}
+    case 'Antalya':{const gw=Math.min(60,w*.08), gx=x+w*.12; return g(gx,y+pad,gw,h-2*pad)+d(x+w*.48,y+pad,8,h-2*pad);}
+    case 'Konya':{const ww=w*.6,hh=h*.28,xx=x+(w-ww)/2,gp=h*.06,y1=y+pad,y2=y1+hh+gp; return g(xx,y1,ww,hh,10)+g(xx,y2,ww,hh,10);}
+    case 'Adana':{const s=Math.min(120,w*.18); return d(x+w*.15,y+h*.65,w*.7,10)+g(x+w*.6,y+pad,s,s);}
+    case 'Gaziantep':{const ww=Math.min(90,w*.12); let out=g(x+(w-ww)/2,y+pad,ww,h*.7); for(let i=0;i<4;i++){const yy=y+h*.75+i*18; out+=d(x+w*.18,yy,w*.64,8);} return out;}
+    case 'Kayseri':{const gw=Math.min(50,w*.07), gp=gw*.5, total=gw*4+gp*3, xx=x+w-(w*.12+total), yy=y+pad, hh=h-2*pad; return [0,1,2,3].map(i=>g(xx+i*(gw+gp),yy,gw,hh)).join('');}
+    case 'Trabzon':{const ww=w*.5,hh=h*.5,xx=x+(w-ww)/2,yy=y+(h-hh)/2-h*.08; return g(xx,yy,ww,hh,12)+d(x+w*.15,yy+hh+20,w*.7,10);}
+  }
+  return '';
+}
+
+/* ---------- Bindings ---------- */
+function bindOptionGroup(containerSel, key){
+  const box = $(containerSel);
+  box.addEventListener('click', e=>{
+    const el = (e.target as HTMLElement).closest('.opt'); if(!el) return;
+    $$('.opt', box).forEach(x=>x.classList.remove('active'));
+    el.classList.add('active');
+    state[key] = el.dataset.v;
+    render();
+  });
+}
+bindOptionGroup('#frameForm','frameForm');
+bindOptionGroup('#opening','openDirection');
+bindOptionGroup('#doorForm','doorForm');
+bindOptionGroup('#model','model');
+
+$('#manufacturer').onchange = e=>{state.manufacturer=e.target.value; render();}
+$('#series').onchange = e=>{state.series=e.target.value; render();}
+$('#colOut').onchange = e=>{state.outHex=e.target.value; if(state.inSame) $('#colIn').value='same'; render();}
+$('#inDifferent').onchange = e=>{
+  state.inSame = e.target.value==='no';
+  $('#colIn').disabled = state.inSame;
+  if(state.inSame) $('#colIn').value='same';
+  render();
+};
+$('#colIn').onchange = e=>{
+  const v=e.target.value; if(v!=='same'){state.inHex=v;}
+  render();
+};
+$('#width').oninput = e=>{state.width = Math.max(900, Number(e.target.value||0));}
+$('#height').oninput = e=>{state.height = Math.max(2000, Number(e.target.value||0));}
+$('#width').onchange = ()=>render(); $('#height').onchange = ()=>render();
+
+$('#viewSelect').onchange = e=>{state.view=e.target.value; syncViewSeg(); render();}
+$('#viewSeg').addEventListener('click',e=>{const b=(e.target as HTMLElement).closest('button'); if(!b) return; state.view=b.dataset.v; syncViewSeg(); $('#viewSelect').value=state.view; render();});
+$('#viewSeg2').addEventListener('click',e=>{const b=(e.target as HTMLElement).closest('button'); if(!b) return; state.view=b.dataset.v; syncViewSeg(); $('#viewSelect').value=state.view; render();});
+function syncViewSeg(){
+  $$('#viewSeg button, #viewSeg2 button').forEach(btn=>{
+    btn.classList.toggle('active', btn.dataset.v===state.view);
+  });
+}
+$('#toggleTheme').onclick = ()=>{state.theme = state.theme==='Tag'?'Abend':'Tag'; $('#toggleTheme').textContent = state.theme==='Tag'?'Abendmodus':'Tagmodus'; render();};
+
+/* Presets */
+const presets = {
+  modernAnth: ()=>{ state.frameForm='Modern'; state.doorForm='Ohne Seitenteile ohne Oberlicht'; state.outHex='#383E42'; state.model='Istanbul'; },
+  klassikWhite: ()=>{ state.frameForm='Klassik'; state.doorForm='Ohne Seitenteil mit Oberlicht'; state.outHex='#F2F2F2'; state.model='Bursa'; },
+  woodTop: ()=>{ state.frameForm='Elegant'; state.doorForm='Seitenteil links & rechts mit Oberlicht'; state.outHex='#6B3E2E'; state.model='Konya'; },
+  elegantDb: ()=>{ state.frameForm='Elegant'; state.doorForm='Seitenteil rechts ohne Oberlicht'; state.outHex='#6E6B63'; state.model='Kayseri'; },
+};
+$$('[data-preset]').forEach(b=> b.addEventListener('click', ()=>{
+  presets[b.dataset.preset](); // simple
+  // UI active classes updaten
+  $$('#frameForm .opt').forEach(x=>x.classList.toggle('active', x.dataset.v===state.frameForm));
+  $$('#doorForm .opt').forEach(x=>x.classList.toggle('active', x.dataset.v===state.doorForm));
+  $$('#model .opt').forEach(x=>x.classList.toggle('active', x.dataset.v===state.model));
+  $('#colOut').value = state.outHex;
+  render();
+}));
+
+/* Initial */
+render();
+</script>
+</body>
+</html>
