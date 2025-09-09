@@ -48,6 +48,7 @@ export function render(){
   const hingeLeft = /links/.test(state.openDirection);
   const frameRx = state.frameForm==='Elegant'?18:state.frameForm==='Modern'?0:8;
   const doorColor = state.view==='Außen' ? state.outHex : (state.inSame? state.outHex : state.inHex);
+  document.body.classList.toggle('dark', night);
 
   const wallGrad = night?`url(#wallNight)`:`url(#wallDay)`;
   const lampFill = night? '#ffdf7a':'#ffd54f';
@@ -126,6 +127,8 @@ export function render(){
   // Summary UI
   $('#sumView').textContent = state.view;
   const sum = $('#summaryGrid'); sum.innerHTML = '';
+  const outColorName = $('#colOut').selectedOptions[0].textContent;
+  const inColorName = state.inSame ? 'gleich Außen' : $('#colIn').selectedOptions[0].textContent;
   const rows = [
     ['Hersteller', state.manufacturer],
     ['Serie', state.series],
@@ -133,6 +136,10 @@ export function render(){
     ['Öffnungsrichtung', state.openDirection],
     ['Türform', state.doorForm],
     ['Modell', state.model],
+    ['Außenfarbe', outColorName],
+    ['Innenfarbe', inColorName],
+    ['Breite', state.width + ' mm'],
+    ['Höhe', state.height + ' mm'],
   ];
   rows.forEach(([l,v])=>{
     const d=document.createElement('div'); d.innerHTML=`<div class="muted" style="font-size:12px">${l}</div><div style="font-weight:600">${v}</div>`;
