@@ -35,5 +35,6 @@
   input,select{width:100%;border:1px solid var(--border);border-radius:10px;background:var(--card);padding:.6rem .7rem}
   /* Live Scene box */
   .scene{flex:1;border:1px solid var(--border);border-radius:14px;background:var(--card);display:grid;place-items:center;overflow:hidden;min-height:420px}
-  .summary{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px}
-  .sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.summary{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px}
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+#priceBreakdown div{display:flex;justify-content:space-between}

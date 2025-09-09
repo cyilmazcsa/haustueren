@@ -1,5 +1,53 @@
 import { state, $, parseDoorForm } from './state.js';
 
+const fmtEUR = n => new Intl.NumberFormat('de-DE',{style:'currency',currency:'EUR'}).format(n);
+
+const PRICE_TABLE = {
+  base: { PREMIUM: 2899, EXCLUSIV: 3299 },
+  frameForm: { Elegant: 0, Modern: 68.47, Klassik: 111.94 },
+  doorForm: {
+    "Ohne Seitenteile ohne Oberlicht": 0,
+    "Seitenteil links ohne Oberlicht": 390,
+    "Seitenteil rechts ohne Oberlicht": 390,
+    "Seitenteil links & rechts ohne Oberlicht": 780,
+    "Ohne Seitenteil mit Oberlicht": 350,
+    "Seitenteil links mit Oberlicht": 740,
+    "Seitenteil rechts mit Oberlicht": 740,
+    "Seitenteil links & rechts mit Oberlicht": 1130,
+  },
+  model: { Bursa: 150 },
+  color: {
+    '#383E42': 0,
+    '#F2F2F2': 0,
+    '#1F2326': 0,
+    '#6E6B63': 180,
+    '#6B3E2E': 240,
+  },
+  insideDifferent: 60,
+  sizeSurcharge(width,height){ let s=0; if(width>1300) s+=200; else if(width>1100) s+=80; if(height>2300) s+=220; else if(height>2200) s+=120; return s; }
+};
+
+function calcPrice(st){
+  let total = PRICE_TABLE.base[st.series];
+  total += PRICE_TABLE.frameForm[st.frameForm];
+  total += PRICE_TABLE.doorForm[st.doorForm];
+  total += PRICE_TABLE.color[st.outHex] || 0;
+  if(!st.inSame){
+    total += PRICE_TABLE.insideDifferent + (PRICE_TABLE.color[st.inHex]||0)/2;
+  }
+  total += PRICE_TABLE.model[st.model] || 0;
+  total += PRICE_TABLE.sizeSurcharge(st.width, st.height);
+  const items = [];
+  items.push(['Grundpreis '+st.series, PRICE_TABLE.base[st.series]]);
+  const rf = PRICE_TABLE.frameForm[st.frameForm]; if(rf) items.push(['Rahmenform: '+st.frameForm, rf]);
+  const df = PRICE_TABLE.doorForm[st.doorForm]; if(df) items.push(['Türform', df]);
+  const oc = PRICE_TABLE.color[st.outHex]||0; if(oc) items.push(['Außenfarbe', oc]);
+  if(!st.inSame){ items.push(['Innenfarbe', PRICE_TABLE.insideDifferent + (PRICE_TABLE.color[st.inHex]||0)/2]); }
+  const md = PRICE_TABLE.model[st.model]||0; if(md) items.push(['Modell: '+st.model, md]);
+  const sz = PRICE_TABLE.sizeSurcharge(st.width, st.height); if(sz) items.push(['Größenaufschlag', sz]);
+  return { total, breakdown: items };
+}
+
 function renderDIN(k) {
   const isL = /links/.test(k), isIn = /innen/.test(k);
   const pivotX = isL ? 30 : 70;
@@ -49,6 +97,8 @@ export function render(){
   const frameRx = state.frameForm==='Elegant'?18:state.frameForm==='Modern'?0:8;
   const doorColor = state.view==='Außen' ? state.outHex : (state.inSame? state.outHex : state.inHex);
   document.body.classList.toggle('dark', night);
+
+  const { total: price, breakdown } = calcPrice(state);
 
   const wallGrad = night?`url(#wallNight)`:`url(#wallDay)`;
   const lampFill = night? '#ffdf7a':'#ffd54f';
@@ -125,8 +175,10 @@ export function render(){
   </svg>`;
 
   // Summary UI
-  $('#sumView').textContent = state.view;
+  $('#priceValue').textContent = fmtEUR(price);
   const sum = $('#summaryGrid'); sum.innerHTML = '';
+  const pb = $('#priceBreakdown');
+  pb.innerHTML = breakdown.map(([l,a])=>`<div><span>${l}</span><span>${fmtEUR(a)}</span></div>`).join('');
   const outColorName = $('#colOut').selectedOptions[0].textContent;
   const inColorName = state.inSame ? 'gleich Außen' : $('#colIn').selectedOptions[0].textContent;
   const rows = [
