@@ -38,3 +38,4 @@
 .summary{margin-top:12px;border:1px solid var(--border);border-radius:14px;padding:12px}
 .sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 #priceBreakdown div{display:flex;justify-content:space-between}
+.scene svg{display:block;pointer-events:none}
